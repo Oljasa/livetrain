@@ -118,6 +118,10 @@ export default function LeafletMap({ trains, stations, style }: LeafletMapProps)
   useEffect(() => {
     if (!mapRef.current) return;
 
+    // Store current map view state
+    const currentCenter = mapRef.current.getCenter();
+    const currentZoom = mapRef.current.getZoom();
+
     // Remove existing train markers
     trainMarkersRef.current.forEach(marker => marker.remove());
     trainMarkersRef.current = [];
@@ -186,12 +190,12 @@ export default function LeafletMap({ trains, stations, style }: LeafletMapProps)
       trainMarkersRef.current.push(marker);
     });
     
-    // If we have trains with coordinates, fit the map to contain them
-    if (trainMarkersRef.current.length > 0) {
+    // Only set initial view on first load when no center/zoom is set
+    if (trainMarkersRef.current.length > 0 && (!currentCenter || !currentZoom)) {
       const trainGroup = L.featureGroup(trainMarkersRef.current);
       mapRef.current.fitBounds(trainGroup.getBounds().pad(0.1));
-    } else if (stations.length > 0) {
-      // If no trains but we have stations, fit to stations
+    } else if (stations.length > 0 && (!currentCenter || !currentZoom)) {
+      // If no trains but we have stations, fit to stations (only on first load)
       const stationLatLngs = stations
         .filter(s => s.latitude && s.longitude)
         .map(s => [s.latitude, s.longitude] as [number, number]);
@@ -200,6 +204,11 @@ export default function LeafletMap({ trains, stations, style }: LeafletMapProps)
         const bounds = L.latLngBounds(stationLatLngs);
         mapRef.current.fitBounds(bounds.pad(0.1));
       }
+    }
+
+    // Restore the previous view state if it existed
+    if (currentCenter && currentZoom) {
+      mapRef.current.setView(currentCenter, currentZoom, { animate: false });
     }
   }, [trains, stations]);
 
