@@ -1,0 +1,27 @@
+{
+  "name": "livetrain",
+  "description": "Live MTA train tracking application",
+  "rules": {
+    "feedIds": {
+      "1-2-3": "1",
+      "4-5-6": "4",
+      "7": "7",
+      "A-C-E": "ace",
+      "B-D-F-M": "bdfm",
+      "G": "g",
+      "J-Z": "jz",
+      "L": "l",
+      "N-Q-R-W": "nqrw",
+      "S": "s",
+      "SIR": "si"
+    },
+    "updateInterval": 15000,
+    "defaultFeed": "nqrw",
+    "mapDefaults": {
+      "center": [40.7128, -74.0060],
+      "zoom": 12,
+      "maxZoom": 18,
+      "minZoom": 10
+    }
+  }
+} 
