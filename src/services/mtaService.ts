@@ -86,32 +86,15 @@ export class MTAService {
       
       console.log(`Total GTFS entities: ${feed.entity.length}`);
       
-      // Get all entities with vehicle data
+      // Get all entities with vehicle data - less strict filtering
       const vehicleEntities = feed.entity.filter((entity: transit_realtime.IFeedEntity) => 
         entity.vehicle && 
-        entity.vehicle.trip?.routeId && 
-        entity.vehicle.stopId
+        entity.vehicle.trip
       );
       
       console.log(`Found ${vehicleEntities.length} entities with vehicle data`);
       
-      // Debug all stopIds in the feed
-      const stopIds = vehicleEntities.map(e => e.vehicle!.stopId);
-      // console.log('All stopIds in feed:', stopIds);
-      
-      // Debug the first entity to see its structure
-      if (vehicleEntities.length > 0) {
-        const sample = vehicleEntities[0];
-        console.log('Sample vehicle data:', {
-          id: sample.id,
-          stopId: sample.vehicle!.stopId,
-          tripId: sample.vehicle!.trip?.tripId,
-          routeId: sample.vehicle!.trip?.routeId,
-          currentStatus: sample.vehicle!.currentStatus
-        });
-      }
-      
-      return vehicleEntities
+      const transformedTrains = vehicleEntities
         .map((entity: transit_realtime.IFeedEntity) => {
           const vehicle = entity.vehicle!;
           const routeId = vehicle.trip?.routeId || '';
@@ -119,12 +102,11 @@ export class MTAService {
           
           let direction: 'N' | 'S' = 'S';
           if (stopId) {
-            // Direction is the last character of stopId if it's N or S
             const lastChar = stopId.charAt(stopId.length - 1);
             direction = lastChar === 'N' ? 'N' : 'S';
           }
-          
-          return {
+
+          const train = {
             id: entity.id,
             routeId,
             latitude: vehicle.position?.latitude || 0,
@@ -134,8 +116,23 @@ export class MTAService {
             nextStop: stopId,
             status: this.determineStatus(vehicle.currentStatus as number | undefined),
           };
-        })
-        .filter(train => train.latitude !== 0 && train.longitude !== 0); // Filter out trains without valid coordinates
+
+          // Log each transformed train for debugging
+          console.log('Transformed train:', train);
+          
+          return train;
+        });
+
+      console.log(`Transformed ${transformedTrains.length} trains`);
+
+      // Only filter out trains with exactly 0 coordinates
+      const validTrains = transformedTrains.filter(train => 
+        train.latitude !== 0 || train.longitude !== 0
+      );
+
+      console.log(`Final valid trains: ${validTrains.length}`);
+      
+      return transformedTrains;
     } catch (error) {
       console.error('Error fetching train locations:', error);
       throw error;
